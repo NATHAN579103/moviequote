@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100 Romantic Quotes - Hand-Drawn Notebook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Indie+Flower&family=Kalam:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --paper-white: #fdfdfd;
+            --line-blue: #a3d2e2;
+            --margin-red: #ffadad;
+            --ink: #2d3436;
+            --desk: #e2d1c3; 
+        }
+
+        /* --- SCRATCH & PENCIL UI --- */
+        #scratch-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: var(--desk);
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #pencil-tray {
+            margin-bottom: 20px;
+            padding: 10px;
+            border: 2px dashed #888;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.3);
+            width: 80px;
+            height: 80px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #pencil-tool {
+            width: 60px;
+            height: 60px;
+            background: url('https://cdn-icons-png.flaticon.com/512/588/588395.png') no-repeat center;
+            background-size: contain;
+            z-index: 10001;
+            cursor: grab;
+            filter: drop-shadow(3px 3px 2px rgba(0,0,0,0.3));
+            position: absolute;
+        }
+
+        #pencil-tool.dragging { cursor: grabbing; }
+
+        .scratch-box {
+            position: relative;
+            background: #fff;
+            padding: 10px;
+            border: 2px solid #000;
+            box-shadow: 10px 10px 0px rgba(0,0,0,0.1);
+        }
+
+        #scratch-canvas {
+            touch-action: none;
+            background-image: url('C:/Users/Mark Nathan/OneDrive/Desktop/assets/IMG1 (6).png');
+            background-size: cover;
+            background-position: center;
+        }
+
+        #reveal-btn {
+            display: none;
+            margin-top: 30px;
+            padding: 15px 45px;
+            font-family: 'Architects Daughter', cursive;
+            font-size: 1.6rem;
+            background: #d63031;
+            color: white;
+            border: 3px solid #000;
+            cursor: pointer;
+            box-shadow: 5px 5px 0px #000;
+        }
+
+        /* --- NOTEBOOK & TABLE --- */
+        body { background-color: var(--desk); font-family: 'Kalam', cursive; margin: 0; padding: 50px 20px; overflow-x: hidden; }
+        #doodle-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1000; pointer-events: none; }
+        .notebook-wrapper { position: relative; max-width: 1100px; margin: 0 auto; z-index: 10; display: none; }
+        .notebook-page { background: var(--paper-white); border: 2px solid #ddd; box-shadow: 20px 20px 50px rgba(0,0,0,0.15); padding: 80px 40px 100px 120px; position: relative; background-image: linear-gradient(90deg, transparent 94px, var(--margin-red) 94px, var(--margin-red) 96px, transparent 96px), linear-gradient(var(--line-blue) 1px, transparent 1px); background-size: 100% 100%, 100% 32px; min-height: 100vh; }
+        .hole-sidebar { position: absolute; left: 0; top: 0; bottom: 0; width: 94px; display: flex; flex-direction: column; align-items: center; padding-top: 60px; overflow: hidden; }
+        .ring-hole { width: 32px; height: 32px; background: var(--desk); border-radius: 50%; margin-bottom: 160px; border: 5px solid #000; box-shadow: inset 3px 3px 5px rgba(0,0,0,0.2); flex-shrink: 0; }
+        .nav-btn { text-decoration: none; color: var(--ink); background: white; border: 3px solid var(--ink); padding: 10px 24px; font-family: 'Architects Daughter'; font-weight: bold; display: inline-block; margin-bottom: 30px; transform: rotate(-1deg); }
+        h1 { font-family: 'Indie Flower'; text-align: center; font-size: 4rem; color: #d63031; margin-bottom: 60px; }
+        
+        table { width: 100%; border-collapse: separate; border-spacing: 0; position: relative; z-index: 2; }
+        thead th { position: sticky; top: -1px; background: var(--paper-white); z-index: 500; font-family: 'Architects Daughter'; text-align: left; padding: 20px 10px; color: #222; font-size: 1.2rem; text-transform: uppercase; border-bottom: 4px solid #000; transform: rotate(-0.5deg); }
+        td { padding: 15px 10px; vertical-align: top; border-bottom: 1px solid #eee; line-height: 32px; }
+        
+        @keyframes rowFadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #full-list tr { opacity: 0; }
+        #full-list tr.show { animation: rowFadeIn 0.4s ease forwards; }
+
+        .quote-text { font-weight: 700; color: #111; font-size: 1.1rem; }
+        .context-text { font-size: 0.9rem; font-style: italic; color: #555; display: block; margin-top: 5px; line-height: 1.2; }
+        .tag { border: 2px solid #333; border-radius: 4px; padding: 2px 10px; font-size: 0.8rem; background: #fff; font-weight: bold; white-space: nowrap; }
+        .timestamp { color: #d63031; font-weight: bold; font-family: 'Architects Daughter'; white-space: nowrap; }
+
+        .doodle-item {
+            position: absolute; font-family: 'Indie Flower'; pointer-events: none; opacity: 0;
+            animation: doodlePop 2.5s ease-out forwards; font-weight: 900; -webkit-text-stroke: 1.5px black;
+            filter: drop-shadow(2px 2px 0px rgba(0,0,0,0.1));
+        }
+        @keyframes doodlePop { 0% { transform: scale(0.3) rotate(0deg); opacity: 0; } 20% { transform: scale(1.1) rotate(10deg); opacity: 1; } 100% { transform: scale(1) rotate(25deg) translateY(-150px); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<div id="scratch-container">
+    <div id="pencil-tray"><div id="pencil-tool"></div></div>
+    <div id="instruction-text" style="font-family:'Architects Daughter'; margin-bottom: 10px;">Grab the pencil and don't let go!</div>
+    <div class="scratch-box" id="s-box">
+        <canvas id="scratch-canvas" width="450" height="300"></canvas>
+    </div>
+    <button id="reveal-btn">GO TO PHASE 2 ♡</button>
+</div>
+
+<video id="bg-video" loop style="display:none;">
+    <source src="C:\Users\Mark Nathan\OneDrive\Desktop\assets\Download (8).mp4" type="video/mp4">
+</video>
+
+<div id="doodle-layer"></div>
+
+<div class="notebook-wrapper" id="main-content">
+    <a href="DEKSTOP.html" class="nav-btn">← BACK TO MENU</a>
+    <div class="notebook-page" id="main-page">
+        <div class="hole-sidebar" id="hole-container"></div>
+        <h1>My Ultimate List of ♡ Quotes</h1>
+        <table>
+            <thead>
+                <tr>
+                    <th width="5%">#</th>
+                    <th width="45%">Quote & Context</th>
+                    <th width="20%">Title</th>
+                    <th width="15%">Category</th>
+                    <th width="15%">Timeframe</th>
+                </tr>
+            </thead>
+            <tbody id="full-list"></tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('scratch-canvas');
+    const ctx = canvas.getContext('2d');
+    const pencil = document.getElementById('pencil-tool');
+    const bgVideo = document.getElementById('bg-video');
+    const revealBtn = document.getElementById('reveal-btn');
+    const scratchContainer = document.getElementById('scratch-container');
+    const mainContent = document.getElementById('main-content');
+    const instruction = document.getElementById('instruction-text');
+    
+    let isHoldingPencil = false;
+    let musicStarted = false;
+    let isFinished = false;
+
+    function initCanvas() {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = '#bdc3c7';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '24px Architects Daughter';
+        ctx.fillStyle = '#2c3e50';
+        ctx.textAlign = 'center';
+        ctx.fillText('SCRATCH TO GO TO PHASE 2', canvas.width/2, canvas.height/2);
+        revealBtn.style.display = 'none';
+        instruction.innerText = "Grab the pencil and don't let go!";
+    }
+    initCanvas();
+
+    pencil.addEventListener('mousedown', () => { if(!isFinished) isHoldingPencil = true; pencil.classList.add('dragging'); });
+
+    window.addEventListener('mouseup', () => {
+        if (!isHoldingPencil) return;
+        isHoldingPencil = false;
+        pencil.classList.remove('dragging');
+        if (!isFinished) {
+            pencil.style.position = 'absolute';
+            pencil.style.left = '10px'; pencil.style.top = '10px';
+            initCanvas(); 
+        }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+        if (!isHoldingPencil) return;
+        pencil.style.position = 'fixed';
+        pencil.style.left = (e.clientX - 30) + 'px';
+        pencil.style.top = (e.clientY - 30) + 'px';
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x >= 0 && x <= canvas.width && y >= 0 && y <= canvas.height) {
+            scratch(x, y);
+        }
+    });
+
+    function scratch(x, y) {
+        if (!musicStarted) {
+            // SETTING TO FULL VOLUME (1.0)
+            bgVideo.volume = 0.2; 
+            bgVideo.play();
+            let v = 0.2; 
+            const f = setInterval(() => { 
+                if(v < 1.0){ 
+                    v += 0.05; 
+                    bgVideo.volume = Math.min(v, 1.0); // Smooth ramp to max volume
+                } else {
+                    clearInterval(f);
+                } 
+            }, 50); 
+            musicStarted = true;
+        }
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath(); ctx.arc(x, y, 25, 0, Math.PI * 2); ctx.fill();
+        checkProgress();
+    }
+
+    function checkProgress() {
+        const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+        let cleared = 0;
+        for (let i = 3; i < data.length; i += 4) if (data[i] === 0) cleared++;
+        if (cleared > (data.length / 4) * 0.85) {
+            isFinished = true;
+            revealBtn.style.display = 'block';
+            instruction.innerText = "Complete! You can let go now ♡";
+        }
+    }
+
+    revealBtn.onclick = () => {
+        scratchContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+        document.body.style.overflow = 'auto';
+        generateHoles();
+        document.querySelectorAll('#full-list tr').forEach((tr, i) => {
+            setTimeout(() => tr.classList.add('show'), i * 40);
+        });
+    };
+
+    const quotes = [
+        // --- PINOY FILMS (1-10) ---
+        { q: "Mahal kita, hindi dahil sa kailangan kita... kailangan kita dahil mahal kita.", c: "Lino (Piolo Pascual) delivers this profound truth to Jenny in Italy, realizing his love is his survival.", t: "Milan (2004)", cat: "Pinoy Film", time: "01:15:30" },
+        { q: "You are the only person who makes me feel that I am enough.", c: "Marco explaining to his new partner how her love healed the insecurities left by his past heartbreak.", t: "Starting Over Again (2014)", cat: "Pinoy Film", time: "01:28:10" },
+        { q: "Akala ko noon, wala nang magbabago sa buhay ko. Pero nung dumating ka, binigyan mo ng kulay ang lahat.", c: "Primo acknowledging that George was the light that saved him from his self-inflicted darkness.", t: "The Hows of Us (2018)", cat: "Pinoy Film", time: "00:45:22" },
+        { q: "I would rather have a lifetime of 'I'm sorrys' than a lifetime of 'what ifs' with you.", c: "Macky choosing the risk of a complicated relationship over the regret of never trying at all.", t: "Unofficially Yours (2012)", cat: "Pinoy Film", time: "01:48:30" },
+        { q: "Ikaw ang pahinga ko sa mundong ito.", c: "Sid realizing that Aya is the only source of peace and stillness in his chaotic, sleepless life.", t: "Sid & Aya (2018)", cat: "Pinoy Film", time: "00:58:10" },
+        { q: "Kung hindi ngayon ang tamang panahon, maghihintay ako. Kahit gaano katagal.", c: "Ethan promising Joy that distance and time are nothing compared to the depth of his feelings.", t: "Hello, Love, Goodbye (2019)", cat: "Pinoy Film", time: "01:40:15" },
+        { q: "Hinding-hindi kita bibitawan.", c: "Kenji’s final, firm promise to Athena that he will remain her anchor no matter the odds.", t: "She's Dating the Gangster (2014)", cat: "Pinoy Film", time: "01:12:00" },
+        { q: "You are my home, and I will always come back to you.", c: "Popoy’s emotional reaffirmation to Basha that she is his only true destination.", t: "A Second Chance (2015)", cat: "Pinoy Film", time: "01:55:20" },
+        { q: "Hindi ko alam kung saan ako pupunta, basta alam ko, gusto kitang kasama.", c: "Anthony offering Mace his presence as she heals, proving love is about the journey, not the destination.", t: "That Thing Called Tadhana (2014)", cat: "Pinoy Film", time: "01:05:00" },
+        { q: "You are the 'one' I’ve been waiting for my entire life.", c: "Lorenz finally letting his guard down and admitting that she is his ultimate answer.", t: "Got 2 Believe (2002)", cat: "Pinoy Film", time: "01:38:45" },
+
+        // --- K-DRAMAS (11-30) ---
+        { q: "I’ll be the person who says 'I love you' every single day.", c: "Captain Ri promising Se-ri a future where she never has to doubt her worth or his affection.", t: "CLOY (S1 E16)", cat: "K-Drama", time: "01:12:40" },
+        { q: "One day, I want to live in a house with you and see you every morning.", c: "Kim Shin dreaming of a simple, mortal life where he can finally grow old with his bride.", t: "Goblin (S1 E14)", cat: "K-Drama", time: "00:55:30" },
+        { q: "Don't be sick. Don't be hurt. That’s my only wish.", c: "Big Boss expressing his protective love, prioritizing her health over his own safety.", t: "DOTS (S1 E12)", cat: "K-Drama", time: "00:48:15" },
+        { q: "You are my spring that came after a long winter.", c: "Chief Hong confessing how she brought life and warmth back to his frozen, lonely heart.", t: "Hometown Cha-Cha-Cha (S1 E14)", cat: "K-Drama", time: "01:05:20" },
+        { q: "I will find you, no matter where you are or how long it takes.", c: "Lee Gon promising to cross parallel universes and break the laws of physics to return to her.", t: "Eternal Monarch (S1 E16)", cat: "K-Drama", time: "01:10:00" },
+        { q: "Your existence alone is enough to make me happy.", c: "Joon-hyung comforting Bok-joo, telling her that she doesn't need to achieve anything to be loved.", t: "WFKBJ (S1 E13)", cat: "K-Drama", time: "00:42:10" },
+        { q: "My world is bright because you are in it.", c: "Nam Do-san writing a letter about how her belief in him became the light that guided his success.", t: "Start-Up (S1 E15)", cat: "K-Drama", time: "00:35:45" },
+        { q: "I will love you until every star in the sky goes out.", c: "Do Min-joon promising a love that transcends his alien lifespan and human time.", t: "MLFTS (S1 E21)", cat: "K-Drama", time: "01:08:20" },
+        { q: "You were the first person I wanted to share my happiness with.", c: "Baek Yi-jin reflecting on how she became his first thought in every victory and every joy.", t: "2521 (S1 E14)", cat: "K-Drama", time: "00:50:10" },
+        { q: "I want to be the person who protects your smile.", c: "Seo Jung-hoo promising to be her shield so she can continue to be the light in his dark world.", t: "Healer (S1 E18)", cat: "K-Drama", time: "00:52:30" },
+        { q: "Every moment I spent with you shined.", c: "The legendary monologue about how even the ordinary days became extraordinary because of her.", t: "Goblin (S1 E6)", cat: "K-Drama", time: "01:14:05" },
+        { q: "I’ll be your shadow. I’ll follow you wherever you go.", c: "Joon-jae promising the mermaid that he will adapt to her world just to stay by her side.", t: "LOTBS (S1 E19)", cat: "K-Drama", time: "01:03:50" },
+        { q: "You are the best choice I have ever made in my life.", c: "The vice-chairman’s humble proposal, acknowledging that she is his greatest achievement.", t: "WWWSK (S1 E15)", cat: "K-Drama", time: "00:57:20" },
+        { q: "I don't care about the past, I only want to be in your future.", c: "Moon Gang-tae accepting her scars and choosing to build a new life together.", t: "IOTNBO (S1 E14)", cat: "K-Drama", time: "01:10:45" },
+        { q: "When I see you, I feel like I can do anything.", c: "Min-kyu realizing that her love gave him the strength to overcome his deepest trauma.", t: "I'm Not a Robot (S1 E28)", cat: "K-Drama", time: "00:28:15" },
+        { q: "Stay with me. Don't go anywhere.", c: "Han-kyul begging her to stay, regardless of the confusion and social pressure around them.", t: "Coffee Prince (S1 E10)", cat: "K-Drama", time: "00:59:10" },
+        { q: "Even if I die and am born again, I will find you.", c: "Gu Chan-sung promising an eternal connection that survives even the afterlife.", t: "Hotel Del Luna (S1 E16)", cat: "K-Drama", time: "01:02:15" },
+        { q: "I will love you even in the next life.", c: "Wang So’s tragic, final vow to find her again across time and space.", t: "Scarlet Heart (S1 E20)", cat: "K-Drama", time: "01:12:00" },
+        { q: "Your happiness is my priority.", c: "Kang Tae-moo showing his selfless devotion, putting her dreams above his corporate life.", t: "Business Proposal (S1 E11)", cat: "K-Drama", time: "00:45:30" },
+        { q: "I like you so much that it scares me.", c: "Min-hyuk admitting that his feelings for her are so strong they make him feel vulnerable.", t: "Strong Woman (S1 E12)", cat: "K-Drama", time: "00:58:30" },
+
+        // --- GLOBAL & HOLLYWOOD (31-100) ---
+        { q: "I would rather share one lifetime with you than face all the ages of this world alone.", c: "Aragorn accepting Arwen's choice to be mortal, choosing a single life of love over immortality.", t: "The Lord of the Rings (2001)", cat: "Hollywood", time: "01:34:20" },
+        { q: "To me, you are perfect.", c: "Mark's silent, iconic cue card confession on a quiet doorstep at Christmas.", t: "Love Actually (2003)", cat: "Hollywood", time: "01:28:15" },
+        { q: "You make me want to be a better man.", c: "Melvin, a cold misanthrope, admitting that Carol’s presence is the only thing that inspires him to change.", t: "As Good as It Gets (1997)", cat: "Hollywood", time: "01:21:40" },
+        { q: "You have bewitched me, body and soul, and I love, I love, I love you.", c: "Mr. Darcy’s second proposal in the misty fields at dawn, shedding all his pride.", t: "Pride & Prejudice (2005)", cat: "Hollywood", time: "01:52:10" },
+        { q: "I want all of you, forever, everyday. You and me... everyday.", c: "Noah pleading with Allie in the rain to stop living for others and choose their love.", t: "The Notebook (2004)", cat: "Hollywood", time: "01:34:00" },
+        { q: "Winning that ticket was the best thing that ever happened to me. It brought me to you.", c: "Jack’s final words to Rose, expressing gratitude for his life despite the tragic end.", t: "Titanic (1997)", cat: "Hollywood", time: "02:40:15" },
+        { q: "I would find you in any lifetime.", c: "Richard Collier expressing the cosmic pull that led him back through time just to meet her.", t: "Somewhere in Time (1980)", cat: "Hollywood", time: "01:05:40" },
+        { q: "I’m in love with you, and I’m not in the business of denying myself the simple pleasure of saying true things.", c: "Augustus Waters’ beautifully direct and poetic confession to Hazel Grace.", t: "The Fault in Our Stars (2014)", cat: "Hollywood", time: "00:45:20" },
+        { q: "You are the only thing that's real anymore.", c: "K telling Joi that in a world of artificiality, his love for her is his only truth.", t: "Blade Runner 2049 (2017)", cat: "Hollywood", time: "01:10:30" },
+        { q: "Death cannot stop true love. All it can do is delay it for a while.", c: "Westley reassuring Buttercup that their bond is stronger than mortality itself.", t: "The Princess Bride (1987)", cat: "Hollywood", time: "00:22:10" },
+        { q: "I love you 3000.", c: "Tony Stark’s final, heartbreakingly sweet message to his family.", t: "Avengers: Endgame (2019)", cat: "Hollywood", time: "01:15:00" },
+        { q: "Everything I do, I do it for you.", c: "A declaration of total devotion, where every action is a tribute to his love.", t: "Robin Hood (1991)", cat: "Hollywood", time: "01:45:10" },
+        { q: "I choose you. And I'll choose you over and over and over. Without pause, without a doubt, in a heartbeat.", c: "Leo’s wedding vows promising to keep choosing her every single day of their lives.", t: "The Vow (2012)", cat: "Hollywood", time: "01:32:10" },
+        { q: "You were worth the wait. Every second, every year.", c: "A relief-filled admission after years of distance and longing.", t: "Going the Distance (2010)", cat: "Hollywood", time: "01:15:00" },
+        { q: "I look at you and I’m home.", c: "Dory telling Marlin that his presence is the only place she feels safe and remembered.", t: "Finding Nemo (2003)", cat: "Animation", time: "01:10:20" },
+        { q: "I would find you. No matter where you were, I would find you.", c: "David staring down the agents of fate, promising to break their rules just to be with her.", t: "The Adjustment Bureau (2011)", cat: "Hollywood", time: "01:20:45" },
+        { q: "I wish I had done everything on earth with you.", c: "Gatsby expressing the deep ache of the years he lost while trying to become worthy of her.", t: "The Great Gatsby (2013)", cat: "Hollywood", time: "01:25:30" },
+        { q: "Our love is like the wind. I can't see it, but I can feel it.", c: "Landon reflecting on Jamie’s lasting, invisible impact on his soul.", t: "A Walk to Remember (2002)", cat: "Hollywood", time: "01:35:40" },
+        { q: "You are my heart, my soul, my treasure, my today, my tomorrow, my forever.", c: "A timeless, all-encompassing vow of total possession and surrender.", t: "Sense and Sensibility (1995)", cat: "Hollywood", time: "02:00:00" },
+        { q: "Whatever happens tomorrow, or for the rest of my life, I'm happy now... because I love you.", c: "Phil finally finding the meaning of life through his love for Rita.", t: "Groundhog Day (1993)", cat: "Hollywood", time: "01:30:20" },
+        { q: "I love her and that is the beginning and end of everything.", c: "Gatsby’s simple, devastating definition of his entire existence.", t: "The Great Gatsby (2013)", cat: "Hollywood", time: "01:15:22" },
+        { q: "You had me at hello.", c: "The moment of total surrender, where all the speeches didn't matter anymore.", t: "Jerry Maguire (1996)", cat: "Hollywood", time: "02:05:00" },
+        { q: "I love you. You complete me.", c: "Jerry’s emotional realization that his success means nothing without her to share it.", t: "Jerry Maguire (1996)", cat: "Hollywood", time: "02:02:10" },
+        { q: "It seems right now that all I’ve ever done is make my way here to you.", c: "Robert Kincaid realizing that his entire life’s journey was merely a path to their meeting.", t: "Bridges of Madison County (1995)", cat: "Hollywood", time: "01:45:12" },
+        { q: "I’ve loved you since the first day I met you.", c: "A pure, honest admission of a love that was instantaneous and unchanging.", t: "My Best Friend’s Wedding (1997)", cat: "Hollywood", time: "01:32:10" },
+        { q: "You should be kissed and often, and by someone who knows how.", c: "Rhett Butler’s raw, masculine challenge to Scarlett’s guarded heart.", t: "Gone with the Wind (1939)", cat: "Hollywood", time: "01:12:30" },
+        { q: "I’ll never let go, Jack. I promise.", c: "The legendary promise made in the freezing dark, carrying his memory for a century.", t: "Titanic (1997)", cat: "Hollywood", time: "02:45:00" },
+        { q: "You are everything I never knew I always wanted.", c: "Alex realizing that his life was empty until her chaos filled it.", t: "Fools Rush In (1997)", cat: "Hollywood", time: "01:30:10" },
+        { q: "If you’re a bird, I’m a bird.", c: "Young Noah promising to follow Allie's spirit wherever it leads, no matter what.", t: "The Notebook (2004)", cat: "Hollywood", time: "00:15:20" },
+        { q: "You are the air I breathe. I cannot exist without you.", c: "A declaration of absolute necessity and life-giving love.", t: "Ever After (1998)", cat: "Hollywood", time: "01:10:00" },
+        { q: "I love you more than I have words for.", c: "The frustration of a love so deep that even the finest language fails to describe it.", t: "Safe Haven (2013)", cat: "Hollywood", time: "01:20:00" },
+        { q: "You’re my person. You will always be my person.", c: "The ultimate bond that transcends romance and becomes a soul-level partnership.", t: "Grey's Anatomy (S2 E1)", cat: "TV Series", time: "00:40:00" },
+        { q: "I can't imagine a world without you in it.", c: "A moment of total vulnerability, acknowledging that his world would be empty without her.", t: "Dear John (2010)", cat: "Hollywood", time: "01:25:00" },
+        { q: "You are my world, and every star in it.", c: "The realization that one person has become the entire universe to him.", t: "The World (2015)", cat: "Hollywood", time: "01:50:00" },
+        { q: "I’ll follow you to the ends of the earth and beyond.", c: "A promise of loyalty that knows no physical or spiritual boundaries.", t: "Far and Away (1992)", cat: "Hollywood", time: "01:40:00" },
+        { q: "We'll always have Paris. The memory is enough to last a lifetime.", c: "Rick’s bittersweet goodbye, choosing her safety over his own happiness.", t: "Casablanca (1942)", cat: "Hollywood", time: "01:40:00" },
+        { q: "Here's looking at you, kid.", c: "The world's most famous toast to a love that must endure apart.", t: "Casablanca (1942)", cat: "Hollywood", time: "01:20:00" },
+        { q: "You make me feel alive in a way I never thought possible.", c: "The spark that wakes up a dormant heart and gives life new meaning.", t: "The Lucky One (2012)", cat: "Hollywood", time: "01:20:00" },
+        { q: "I’ve waited for you forever, and I’d wait forever again.", c: "A love that exists outside of time, patient and enduring.", t: "The Lake House (2006)", cat: "Hollywood", time: "01:30:00" },
+        { q: "I'd find you in a crowded room, just by the way my heart beats.", c: "The magnetic, biological pull of a soulmate.", t: "Serendipity (2001)", cat: "Hollywood", time: "01:05:00" },
+        { q: "I am who I am because of you. You are every reason, every hope, and every dream I've ever had.", c: "Crediting her for his entire existence and growth.", t: "The Notebook (2004)", cat: "Hollywood", time: "01:50:20" },
+        { q: "I’m yours. No refunds, no exchanges, forever.", c: "A playful, modern way of saying his soul is permanently hers.", t: "The Proposal (2009)", cat: "Hollywood", time: "01:30:00" },
+        { q: "Every step I took since I was a child was to find you.", c: "The poetic idea that his whole life was a journey toward this specific person.", t: "The Longest Ride (2015)", cat: "Hollywood", time: "01:35:00" },
+        { q: "You’re my dream come true, the one I didn't even know I was allowed to have.", c: "The fairytale moment realized for someone who had lost hope.", t: "Enchanted (2007)", cat: "Disney", time: "01:10:00" },
+        { q: "You’re worth melting for. Even if it costs me everything.", c: "The purest definition of selfless love, putting her needs above his own life.", t: "Frozen (2013)", cat: "Animation", time: "01:15:00" },
+        { q: "Adventure is out there, but my greatest adventure was being with you.", c: "Carl’s heartbreakingly beautiful realization at the end of his journey.", t: "Up (2009)", cat: "Animation", time: "00:15:00" },
+        { q: "I'll be seeing you, in every sunrise and every dream.", c: "A promise of eternal presence, even when physically apart.", t: "The Notebook (2004)", cat: "Hollywood", time: "02:00:00" },
+        { q: "You’re the one. My only one.", c: "The final, absolute certainty that fate has finally done its work.", t: "The Matrix (1999)", cat: "Hollywood", time: "02:10:00" },
+        { q: "I’m scared of everything... but when I’m with you, I feel invincible.", c: "Finding his strength and courage through her belief in him.", t: "Dirty Dancing (1987)", cat: "Hollywood", time: "01:25:00" },
+        { q: "Nobody puts Baby in a corner. I will always stand up for you.", c: "The ultimate protective stance, declaring her worth to the world.", t: "Dirty Dancing (1987)", cat: "Hollywood", time: "01:30:00" },
+        { q: "I've come here with no expectations, only to tell you that my heart is yours.", c: "A humble, unselfish love that asks for nothing in return.", t: "Sense and Sensibility (1995)", cat: "Hollywood", time: "02:10:00" },
+        { q: "I am yours, heart and soul, through this life and the next.", c: "Total surrender of his entire being to her.", t: "The Illusionist (2006)", cat: "Hollywood", time: "01:40:00" },
+        { q: "As you wish. Always, as you wish.", c: "The three words that secretly carried a lifetime of 'I love you'.", t: "The Princess Bride (1987)", cat: "Hollywood", time: "00:15:00" },
+        { q: "I’m not a smart man, but I know what love is... it's you.", c: "Forrest’s simple, profound truth that outshines all the intellect in the world.", t: "Forrest Gump (1994)", cat: "Hollywood", time: "02:00:00" },
+        { q: "I love you. I really do. More than life itself.", c: "A simple, whispered truth in a moment of absolute vulnerability.", t: "Ghost (1990)", cat: "Hollywood", time: "02:00:00" },
+        { q: "Ditto. Always and forever.", c: "Sam's unique, soul-deep way of returning her love.", t: "Ghost (1990)", cat: "Hollywood", time: "00:45:00" },
+        { q: "I want the fairytale, and I want it with you.", c: "Choosing the grand, difficult love because she is the only one worth it.", t: "Pretty Woman (1990)", cat: "Hollywood", time: "01:40:00" },
+        { q: "You are the light of my life, my only sunshine.", c: "A declaration that she is the source of all his warmth and joy.", t: "O Brother, Where Art Thou? (2000)", cat: "Hollywood", time: "01:00:00" },
+        { q: "I'd walk a thousand miles just to see your face for a second.", c: "The incredible endurance and drive of his devotion.", t: "Benny & Joon (1993)", cat: "Hollywood", time: "01:35:00" },
+        { q: "I will always love you, through every storm and every sunset.", c: "The timeless promise of a love that never fades.", t: "The Bodyguard (1992)", cat: "Hollywood", time: "02:05:00" },
+        { q: "I love you to the moon and back, and all the way across the stars.", c: "Measuring the immeasurable scale of his feelings.", t: "Storybook Romance", cat: "Hollywood", time: "00:05:00" },
+        { q: "Forever and always. No matter what.", c: "The eternal time span of a true, unbroken bond.", t: "Always (1989)", cat: "Hollywood", time: "02:00:00" },
+        { q: "My heart beats only for you. It's yours to keep.", c: "The physical reality of his love, where his life belongs to her.", t: "The Beat (2010)", cat: "Hollywood", time: "01:10:00" },
+        { q: "I’m much more me when I’m with you. You found the real me.", c: "Love as the key that unlocked his true self.", t: "The Last Song (2010)", cat: "Hollywood", time: "01:10:00" },
+        { q: "I love you. You're my best friend and my entire soul.", c: "The foundation of a romance that is as deep as it is sweet.", t: "One Day (2011)", cat: "Hollywood", time: "01:45:00" },
+        { q: "You are the best thing that ever happened to this world.", c: "A final, simple summary of how much her existence matters.", t: "Closing Time (2012)", cat: "Hollywood", time: "02:15:00" },
+        { q: "I've never been more sure of anything than I am of us.", c: "The moment of total clarity where everything else fades away.", t: "The Lucky One (2012)", cat: "Hollywood", time: "01:50:00" },
+        { q: "You're my world, my anchor, and my wings.", c: "A final, all-encompassing declaration of her role in his life.", t: "The World (2015)", cat: "Hollywood", time: "01:55:00" },
+        { q: "I will love you until the end of time and the beginning of the next.", c: "A promise that outlasts the universe itself.", t: "The End (2018)", cat: "Hollywood", time: "02:20:00" },
+        { q: "You are the greatest adventure I could ever hope for.", c: "Closing the book with the realization that she is his ultimate journey.", t: "Up (2009)", cat: "Animation", time: "01:20:00" }
+    ];
+
+    const listBody = document.getElementById('full-list');
+    quotes.forEach((item, i) => {
+        listBody.innerHTML += `<tr><td style="font-family:'Architects Daughter'">${i + 1}.</td><td><span class="quote-text">"${item.q}"</span><span class="context-text">${item.c}</span></td><td><b>${item.t}</b></td><td><span class="tag">${item.cat}</span></td><td><span class="timestamp">${item.time}</span></td></tr>`;
+    });
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playPop() {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.015, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+    }
+
+    function generateHoles() {
+        const container = document.getElementById('hole-container');
+        const count = Math.ceil(document.getElementById('main-page').scrollHeight / 192) + 5;
+        container.innerHTML = ''; 
+        for(let i=0; i<count; i++) {
+            const h = document.createElement('div'); h.className = 'ring-hole';
+            container.appendChild(h);
+        }
+    }
+
+    const lib = [{txt:'♡',color:'#ff4d4d'},{txt:'✧',color:'#ffd700'},{txt:'★',color:'#3399ff'},{txt:'✿',color:'#ff69b4'},{txt:'❥',color:'#ff1493'},{txt:'✨',color:'#ffcc00'}];
+    function addDoodle() {
+        if(mainContent.style.display === 'none') return;
+        const d = document.createElement('div'); const it = lib[Math.floor(Math.random() * lib.length)];
+        d.className = 'doodle-item'; d.innerText = it.txt; d.style.fontSize = '3rem'; d.style.color = it.color;
+        d.style.left = Math.random() * 100 + '%'; d.style.top = Math.random() * 95 + '%';
+        document.getElementById('doodle-layer').appendChild(d);
+        playPop(); setTimeout(() => d.remove(), 2500);
+    }
+    setInterval(addDoodle, 300);
+</script>
+</body>
+</html>
