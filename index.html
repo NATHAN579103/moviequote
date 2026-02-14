@@ -63,7 +63,8 @@
 
         #scratch-canvas {
             touch-action: none;
-            background-image: url('C:/Users/Mark Nathan/OneDrive/Desktop/assets/IMG1 (6).png');
+            /* UPDATED: Uses the image present in your repository */
+            background-image: url('IMG1 (6).png');
             background-size: cover;
             background-position: center;
         }
@@ -124,13 +125,13 @@
 </div>
 
 <video id="bg-video" loop style="display:none;">
-    <source src="C:\Users\Mark Nathan\OneDrive\Desktop\assets\Download (8).mp4" type="video/mp4">
+    <source src="Download (8).mp4" type="video/mp4">
 </video>
 
 <div id="doodle-layer"></div>
 
 <div class="notebook-wrapper" id="main-content">
-    <a href="DEKSTOP.html" class="nav-btn">← BACK TO MENU</a>
+    <a href="https://nathan579103.github.io/" class="nav-btn">← BACK TO MENU</a>
     <div class="notebook-page" id="main-page">
         <div class="hole-sidebar" id="hole-container"></div>
         <h1>My Ultimate List of ♡ Quotes</h1>
@@ -204,14 +205,13 @@
 
     function scratch(x, y) {
         if (!musicStarted) {
-            // SETTING TO FULL VOLUME (1.0)
             bgVideo.volume = 0.2; 
             bgVideo.play();
             let v = 0.2; 
             const f = setInterval(() => { 
                 if(v < 1.0){ 
                     v += 0.05; 
-                    bgVideo.volume = Math.min(v, 1.0); // Smooth ramp to max volume
+                    bgVideo.volume = Math.min(v, 1.0); 
                 } else {
                     clearInterval(f);
                 } 
@@ -245,7 +245,6 @@
     };
 
     const quotes = [
-        // --- PINOY FILMS (1-10) ---
         { q: "Mahal kita, hindi dahil sa kailangan kita... kailangan kita dahil mahal kita.", c: "Lino (Piolo Pascual) delivers this profound truth to Jenny in Italy, realizing his love is his survival.", t: "Milan (2004)", cat: "Pinoy Film", time: "01:15:30" },
         { q: "You are the only person who makes me feel that I am enough.", c: "Marco explaining to his new partner how her love healed the insecurities left by his past heartbreak.", t: "Starting Over Again (2014)", cat: "Pinoy Film", time: "01:28:10" },
         { q: "Akala ko noon, wala nang magbabago sa buhay ko. Pero nung dumating ka, binigyan mo ng kulay ang lahat.", c: "Primo acknowledging that George was the light that saved him from his self-inflicted darkness.", t: "The Hows of Us (2018)", cat: "Pinoy Film", time: "00:45:22" },
@@ -256,8 +255,6 @@
         { q: "You are my home, and I will always come back to you.", c: "Popoy’s emotional reaffirmation to Basha that she is his only true destination.", t: "A Second Chance (2015)", cat: "Pinoy Film", time: "01:55:20" },
         { q: "Hindi ko alam kung saan ako pupunta, basta alam ko, gusto kitang kasama.", c: "Anthony offering Mace his presence as she heals, proving love is about the journey, not the destination.", t: "That Thing Called Tadhana (2014)", cat: "Pinoy Film", time: "01:05:00" },
         { q: "You are the 'one' I’ve been waiting for my entire life.", c: "Lorenz finally letting his guard down and admitting that she is his ultimate answer.", t: "Got 2 Believe (2002)", cat: "Pinoy Film", time: "01:38:45" },
-
-        // --- K-DRAMAS (11-30) ---
         { q: "I’ll be the person who says 'I love you' every single day.", c: "Captain Ri promising Se-ri a future where she never has to doubt her worth or his affection.", t: "CLOY (S1 E16)", cat: "K-Drama", time: "01:12:40" },
         { q: "One day, I want to live in a house with you and see you every morning.", c: "Kim Shin dreaming of a simple, mortal life where he can finally grow old with his bride.", t: "Goblin (S1 E14)", cat: "K-Drama", time: "00:55:30" },
         { q: "Don't be sick. Don't be hurt. That’s my only wish.", c: "Big Boss expressing his protective love, prioritizing her health over his own safety.", t: "DOTS (S1 E12)", cat: "K-Drama", time: "00:48:15" },
@@ -278,8 +275,6 @@
         { q: "I will love you even in the next life.", c: "Wang So’s tragic, final vow to find her again across time and space.", t: "Scarlet Heart (S1 E20)", cat: "K-Drama", time: "01:12:00" },
         { q: "Your happiness is my priority.", c: "Kang Tae-moo showing his selfless devotion, putting her dreams above his corporate life.", t: "Business Proposal (S1 E11)", cat: "K-Drama", time: "00:45:30" },
         { q: "I like you so much that it scares me.", c: "Min-hyuk admitting that his feelings for her are so strong they make him feel vulnerable.", t: "Strong Woman (S1 E12)", cat: "K-Drama", time: "00:58:30" },
-
-        // --- GLOBAL & HOLLYWOOD (31-100) ---
         { q: "I would rather share one lifetime with you than face all the ages of this world alone.", c: "Aragorn accepting Arwen's choice to be mortal, choosing a single life of love over immortality.", t: "The Lord of the Rings (2001)", cat: "Hollywood", time: "01:34:20" },
         { q: "To me, you are perfect.", c: "Mark's silent, iconic cue card confession on a quiet doorstep at Christmas.", t: "Love Actually (2003)", cat: "Hollywood", time: "01:28:15" },
         { q: "You make me want to be a better man.", c: "Melvin, a cold misanthrope, admitting that Carol’s presence is the only thing that inspires him to change.", t: "As Good as It Gets (1997)", cat: "Hollywood", time: "01:21:40" },
